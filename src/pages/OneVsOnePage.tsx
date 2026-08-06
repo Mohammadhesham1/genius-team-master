@@ -85,7 +85,10 @@ export default function OneVsOnePage({ user, navigate: _navigate, registerLeaveG
   }, [user.id]);
 
   // Arrived here right after accepting an invite notification elsewhere in
-  // the app — jump straight to this match's lobby instead of the menu.
+  // the app (or after a refresh restored a matchId we were already part of)
+  // — jump straight to the right screen instead of the menu. The host of the
+  // match always belongs in their own lobby (with the invite/joined-players
+  // view), never in the guest-only "waiting for host" screen.
   const openedMatchRef = useRef<string | null>(null);
   useEffect(() => {
     if (!openMatchId || openedMatchRef.current === openMatchId) return;
@@ -95,9 +98,10 @@ export default function OneVsOnePage({ user, navigate: _navigate, registerLeaveG
       setMatchId(openMatchId);
       setSelectedSubjectId(m.subjectId ?? '');
       setHostCancelledRound(false);
-      setStep(m.status === 'active' ? 'play' : 'waiting-start');
+      const isHost = m.creatorId === user.id;
+      setStep(m.status === 'active' ? 'play' : isHost ? 'lobby' : 'waiting-start');
     }).catch(() => {});
-  }, [openMatchId]);
+  }, [openMatchId, user.id]);
 
   useEffect(() => {
     if (step !== 'create-players') return;
