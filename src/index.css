@@ -1,0 +1,206 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Exo+2:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
+@import 'tailwindcss';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  direction: rtl;
+  font-family: 'Tajawal', system-ui, -apple-system, sans-serif;
+  background-color: #06091a;
+  color: #ffffff;
+  overflow-x: hidden;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+/* Kill the browser's default tap/focus highlight on chart elements — without
+   this, tapping a Recharts svg/legend/section on mobile shows a stray
+   colored outline around every focusable element it touches. */
+svg,
+.recharts-wrapper,
+.recharts-surface,
+.recharts-legend-wrapper,
+.recharts-legend-item {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+/* ── Glass utilities ── */
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-md {
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.glass-strong {
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* ── Glow box-shadows ── */
+.glow-blue   { box-shadow: 0 0 20px rgba(59,130,246,0.55),  0 0 50px rgba(59,130,246,0.22); }
+.glow-purple { box-shadow: 0 0 20px rgba(168,85,247,0.55),  0 0 50px rgba(168,85,247,0.22); }
+.glow-cyan   { box-shadow: 0 0 20px rgba(6,182,212,0.55),   0 0 50px rgba(6,182,212,0.22); }
+.glow-pink   { box-shadow: 0 0 20px rgba(236,72,153,0.55),  0 0 50px rgba(236,72,153,0.22); }
+.glow-green  { box-shadow: 0 0 20px rgba(16,185,129,0.55),  0 0 50px rgba(16,185,129,0.22); }
+.glow-amber  { box-shadow: 0 0 20px rgba(245,158,11,0.55),  0 0 50px rgba(245,158,11,0.22); }
+
+/* ── Text glows ── */
+.text-glow-blue   { text-shadow: 0 0 14px rgba(96,165,250,0.9),  0 0 28px rgba(96,165,250,0.5); }
+.text-glow-purple { text-shadow: 0 0 14px rgba(167,139,250,0.9), 0 0 28px rgba(167,139,250,0.5); }
+.text-glow-cyan   { text-shadow: 0 0 14px rgba(103,232,249,0.9), 0 0 28px rgba(103,232,249,0.5); }
+.text-glow-white  { text-shadow: 0 0 14px rgba(255,255,255,0.7); }
+
+/* ── Gradient text ── */
+.gradient-text {
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #67e8f9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-text-gold {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b, #fcd34d);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Animations ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.65; }
+  50%       { opacity: 1; }
+}
+@keyframes orb-drift {
+  0%, 100% { transform: translate(0,0) scale(1); }
+  33%       { transform: translate(40px,-25px) scale(1.06); }
+  66%       { transform: translate(-25px,18px) scale(0.96); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes shimmer {
+  from { transform: translateX(120%); }
+  to   { transform: translateX(-120%); }
+}
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes ring-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(59,130,246,0.7); }
+  70%  { box-shadow: 0 0 0 14px rgba(59,130,246,0); }
+  100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+}
+@keyframes undoDrain {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+.animate-float      { animation: float 4s ease-in-out infinite; }
+.animate-glow-pulse { animation: glow-pulse 2.5s ease-in-out infinite; }
+.animate-orb        { animation: orb-drift 14s ease-in-out infinite; }
+.animate-spin-slow  { animation: spin-slow 20s linear infinite; }
+.animate-slide-up   { animation: slide-up 0.5s cubic-bezier(0.23,1,0.32,1) both; }
+.animate-scale-in   { animation: scale-in 0.4s cubic-bezier(0.23,1,0.32,1) both; }
+
+/* ── Input resets ── */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input:focus { outline: none; }
+input[type=password] { letter-spacing: 0.3em; }
+button:focus { outline: none; }
+
+/* ── Wallet card stack ── */
+.wallet-card {
+  transition:
+    transform 0.42s cubic-bezier(0.23,1,0.32,1),
+    box-shadow 0.42s ease,
+    top 0.42s cubic-bezier(0.23,1,0.32,1);
+  will-change: transform, top;
+}
+
+/* ── Recharts overrides ── */
+.recharts-text tspan {
+  font-family: 'Tajawal', sans-serif !important;
+  fill: rgba(255,255,255,0.55) !important;
+  font-size: 11px;
+}
+.recharts-polar-grid-concentric-polygon,
+.recharts-polar-grid-concentric-circle {
+  stroke: rgba(255,255,255,0.07) !important;
+}
+.recharts-polar-grid-angle line {
+  stroke: rgba(255,255,255,0.07) !important;
+}
+.recharts-cartesian-grid line {
+  stroke: rgba(255,255,255,0.06) !important;
+}
+.recharts-default-tooltip {
+  background: rgba(8,12,28,0.95) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  border-radius: 12px !important;
+  font-family: 'Tajawal', sans-serif !important;
+  color: white !important;
+}
+
+/* ── Timer circle ── */
+.timer-track {
+  stroke: rgba(255,255,255,0.08);
+  fill: none;
+}
+.timer-fill {
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+}
+
+/* ── Progress bar ── */
+.progress-bar {
+  transition: width 0.1s linear;
+}
+
+/* ── Exo 2 for English / numbers ── */
+.font-exo {
+  font-family: 'Exo 2', system-ui, sans-serif;
+}
