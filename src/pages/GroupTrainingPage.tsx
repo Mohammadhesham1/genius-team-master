@@ -31,7 +31,7 @@ function roundLabel(r: number): string {
   if (ROUND_LABELS[r]) return ROUND_LABELS[r];
   return `رقم ${String(r).split('').map((c) => ARABIC_DIGITS[Number(c)] ?? c).join('')}`;
 }
-// كل الجولات مقفولة على اللعب إلا للأدمن (محمد) — الإحصائيات مفتوحة للكل زي ما هي.
+// الجولات مقفولة على اللعب إلا للأدمن (محمد)، ما عدا آخر ٥ جولات فهي متاحة للكل — الإحصائيات مفتوحة للكل زي ما هي.
 // قايمة الجولات نفسها ديناميكية (roundsSummary مبنية من getAvailableRounds)، فأي جولة
 // جديدة تتضاف في Supabase بتظهر هنا تلقائي من غير أي تعديل كود.
 const ADMIN_NAME = 'محمد';
@@ -133,8 +133,10 @@ export default function GroupTrainingPage({ user, navigate: _navigate }: GroupTr
     });
   }
 
+  const canPlayRound = (r: number) => isAdmin || rounds.slice(-5).includes(r);
+
   const openRound = async (r: number) => {
-    if (!isAdmin) return;
+    if (!canPlayRound(r)) return;
     stopClock();
     setLoadingRound(true);
     setRoundError('');
@@ -321,7 +323,7 @@ export default function GroupTrainingPage({ user, navigate: _navigate }: GroupTr
             {rounds.map((r) => {
               const s = roundsSummary[r] ?? { total: 0, correct: 0, answered: 0 };
               const pct = s.total ? Math.round((s.correct / s.total) * 100) : 0;
-              const canStart = isAdmin;
+              const canStart = canPlayRound(r);
               return (
                 <div key={r} className="glass-md rounded-2xl p-4">
                   <p className="font-black text-lg text-white" style={{ fontFamily: "'Tajawal',sans-serif" }}>الجولة {roundLabel(r)}</p>

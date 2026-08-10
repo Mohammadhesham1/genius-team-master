@@ -33,15 +33,11 @@ interface OneVsOnePageProps {
    * elsewhere in the app — jumps straight into that match's lobby instead of
    * the menu. */
   openMatchId?: string;
-  /** Called whenever the locally-tracked matchId changes, so App.tsx can keep
-   * it in the persisted route and restore straight into this match after a
-   * page refresh — not just when arriving via an invite notification. */
-  onMatchIdChange?: (matchId: string) => void;
 }
 
 type Step = 'menu' | 'create-subject' | 'create-players' | 'lobby' | 'join' | 'waiting-start' | 'play';
 
-export default function OneVsOnePage({ user, navigate: _navigate, registerLeaveGuard, openMatchId, onMatchIdChange }: OneVsOnePageProps) {
+export default function OneVsOnePage({ user, navigate: _navigate, registerLeaveGuard, openMatchId }: OneVsOnePageProps) {
   const [step, setStep] = useState<Step>('menu');
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [otherUsers, setOtherUsers] = useState<User[]>([]);
@@ -73,8 +69,6 @@ export default function OneVsOnePage({ user, navigate: _navigate, registerLeaveG
     mountedRef.current = false;
     Object.values(cancelTimersRef.current).forEach(clearTimeout);
   }, []);
-
-  useEffect(() => { onMatchIdChange?.(matchId); }, [matchId, onMatchIdChange]);
 
   // Base data needed across steps.
   useEffect(() => {
