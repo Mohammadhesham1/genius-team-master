@@ -100,16 +100,17 @@ export async function submitSoloAnswer(params: SubmitSoloAnswerParams): Promise<
 }
 
 /**
- * Once a subject's normal question bank is exhausted, this reads back:
- *   1) every question whose most recent attempt was wrong, and
- *   2) every question the cursor has already passed (position < next_position)
- *      that was skipped entirely — jumping to another question from the
- *      sidebar advances the cursor past it without ever inserting a
- *      solo_answers row, so it never resurfaces on its own otherwise.
+ * Shared lookup behind getReviewQuestions/getSkippedQuestions:
+ *   - wrongIds: every question whose most recent attempt was wrong.
+ *   - skippedIds: every question the cursor has already passed
+ *     (position < next_position) that was skipped entirely — jumping to
+ *     another question from the sidebar advances the cursor past it without
+ *     ever inserting a solo_answers row, so it never resurfaces on its own
+ *     otherwise.
  * Both are computed live from solo_answers/solo_progress history, so this is
  * retroactive — no backfill needed for people who already hit this before.
  */
-export async function getReviewQuestions(userId: string, subjectId: string): Promise<Question[]> {
+async function getWrongAndSkippedIds(userId: string, subjectId: string): Promise<{ wrongIds: number[]; skippedIds: number[] }> {
   const [progressRes, answersRes] = await Promise.all([
     supabase
       .from('solo_progress')
@@ -150,17 +151,42 @@ export async function getReviewQuestions(userId: string, subjectId: string): Pro
       .filter((id) => !latestCorrectByQuestion.has(id));
   }
 
-  const reviewIds = Array.from(new Set([...wrongIds, ...skippedIds]));
-  if (reviewIds.length === 0) return [];
+  return { wrongIds, skippedIds };
+}
 
+async function getQuestionsByIds(subjectId: string, ids: number[]): Promise<Question[]> {
+  if (ids.length === 0) return [];
   const { data: qRows, error: qErr } = await supabase
     .from('questions')
     .select('*')
     .eq('subject_id', subjectId)
-    .in('id', reviewIds)
+    .in('id', ids)
     .order('position', { ascending: true });
   if (qErr) throw qErr;
   return (qRows ?? []).map(mapQuestionRow);
+}
+
+/**
+ * Once a subject's normal question bank is exhausted for THIS session, this
+ * returns only the wrong questions to replay at half credit. Skipped
+ * questions are deliberately excluded — they're handled by
+ * getSkippedQuestions instead, so they stay queued for the next session
+ * rather than resurfacing immediately.
+ */
+export async function getReviewQuestions(userId: string, subjectId: string): Promise<Question[]> {
+  const { wrongIds } = await getWrongAndSkippedIds(userId, subjectId);
+  return getQuestionsByIds(subjectId, wrongIds);
+}
+
+/**
+ * Questions that were skipped (jumped over via the sidebar) and never
+ * answered. These are meant to be prepended to the start of a fresh
+ * session's queue — played as normal, full-credit questions — rather than
+ * shown as in-session half-credit review.
+ */
+export async function getSkippedQuestions(userId: string, subjectId: string): Promise<Question[]> {
+  const { skippedIds } = await getWrongAndSkippedIds(userId, subjectId);
+  return getQuestionsByIds(subjectId, skippedIds);
 }
 
 export async function advanceSoloProgress(userId: string, subjectId: string, nextPosition: number): Promise<void> {

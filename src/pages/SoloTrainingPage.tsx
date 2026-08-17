@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { User, PageName, Question, Subject } from '../types';
 import { getAllSubjects, getSubjectById } from '../lib/api/subjects';
-import { getOrCreateSoloProgress, getSoloQuestions, getQuestionCount, submitSoloAnswer, advanceSoloProgress, getReviewQuestions } from '../lib/api/solo';
+import { getOrCreateSoloProgress, getSoloQuestions, getQuestionCount, submitSoloAnswer, advanceSoloProgress, getReviewQuestions, getSkippedQuestions } from '../lib/api/solo';
 import { notifyStreakChanged } from '../lib/api/streak';
 import StreakBadge from '../components/StreakBadge';
 import StudyTodayBadge from '../components/StudyTodayBadge';
@@ -39,6 +39,10 @@ export default function SoloTrainingPage({ user, navigate: _navigate }: SoloTrai
   const [showSidebar, setShowSidebar] = useState(false);
   const [resultHistory, setResultHistory] = useState<{ qIdx: number; correct: boolean; attempt: 1 | 2 }[]>([]);
   const [reviewMode, setReviewMode] = useState(false);
+  // Questions replayed at the start of a fresh session because they were skipped
+  // last time. They score at full credit like normal questions, but since the
+  // progress cursor already passed them, submitting an answer must not touch it.
+  const [skipReplayIds, setSkipReplayIds] = useState<Set<number>>(new Set());
   
   const [activeSticker, setActiveSticker] = useState<string | null>(null);
   const [streak, setStreak] = useState({ correct: 0, wrong: 0 });
@@ -95,7 +99,10 @@ export default function SoloTrainingPage({ user, navigate: _navigate }: SoloTrai
     setSubjectId(sid);
     try {
       const [s, nextPos] = await Promise.all([getSubjectById(sid), getOrCreateSoloProgress(user.id, sid)]);
-      const qs = await getSoloQuestions(sid, nextPos);
+      const [skippedQs, qs] = await Promise.all([
+        getSkippedQuestions(user.id, sid),
+        getSoloQuestions(sid, nextPos),
+      ]);
       setSubject(s);
       setQIdx(0);
       setSessionScore({ correct: 0, total: 0 });
@@ -103,9 +110,13 @@ export default function SoloTrainingPage({ user, navigate: _navigate }: SoloTrai
       setStreak({ correct: 0, wrong: 0 });
       setAnswer1(''); setAnswer2('');
 
-      if (qs.length > 0) {
+      // Previously-skipped questions open this fresh session, ahead of the
+      // normal remaining queue — full credit, cursor untouched for them.
+      const combined = [...skippedQs, ...qs];
+      if (combined.length > 0) {
         setReviewMode(false);
-        setQuestions(qs);
+        setSkipReplayIds(new Set(skippedQs.map((q) => q.id)));
+        setQuestions(combined);
         setPhase('timer');
         questionStartRef.current = Date.now();
         startCountdown(TIMER, () => setPhase('reveal'));
@@ -116,6 +127,7 @@ export default function SoloTrainingPage({ user, navigate: _navigate }: SoloTrai
       const reviewQs = await getReviewQuestions(user.id, sid);
       if (reviewQs.length > 0) {
         setReviewMode(true);
+        setSkipReplayIds(new Set());
         setQuestions(reviewQs);
         setPhase('timer');
         questionStartRef.current = Date.now();
@@ -125,6 +137,7 @@ export default function SoloTrainingPage({ user, navigate: _navigate }: SoloTrai
       }
 
       setReviewMode(false);
+      setSkipReplayIds(new Set());
       setQuestions([]);
       setPhase('no-questions');
     } catch {
@@ -164,7 +177,9 @@ export default function SoloTrainingPage({ user, navigate: _navigate }: SoloTrai
       })
       .catch(() => {});
 
-    if (!reviewMode && position != null) {
+    // Skip-replays sit at positions already behind the cursor — advancing on
+    // them would rewind next_position, so only advance for genuinely new questions.
+    if (!reviewMode && !skipReplayIds.has(currentQ.id) && position != null) {
       advanceSoloProgress(user.id, subjectId, position + 1).catch(() => {});
     }
   };
